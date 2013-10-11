@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2013 Arjan Scherpenisse
-%% @doc Fetch list of rooms
+%% @copyright 2013 Marc Worrell
+%% @doc Fetch list of ChitChat rooms
 
-%% Copyright 2013 Arjan Scherpenisse
+%% Copyright 2013 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
