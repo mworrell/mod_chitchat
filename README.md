@@ -25,5 +25,7 @@ Known issues
 Future plans
 ------------
 
+ * Away/Busy state support
+ * Desktop notifications on new messages if window is not in focus
  * Display smileys
  * Exchange files
