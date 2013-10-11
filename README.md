@@ -13,6 +13,7 @@ ChitChat has the following characteristics:
  * Client names can be changed, and will be pushed to other clients
  * Postbacks are used to fetch the list of known rooms and the latest messages in a room
  * Defaults to public access, own access control can be added (usual Zotonic ACL mechanism)
+ * No logging, only a limited number of messages is retained
 
 After installing the module the chat can be found on the ``/chitchat`` url.
 
