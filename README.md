@@ -1,14 +1,12 @@
-mod_chitchat
-============
+ChitChat
+========
 
-Chat module for Zotonic - uses MQTT publish/subscribe
+mod_chitchat is a multi-room chat module for Zotonic.
 
-A multi-room browser based chat. Internally it uses MQTT for the message passing.
-This will make it possible to use external MQTT client to connect to this chat.
+Internally MQTT is used for the message passing. 
+This makes it possible to use external MQTT clients to connect to this chat.
 
-It will need some extra messages for complete MQTT access, for example fetching the known rooms and the latest messages.
-
-This chat has the following characteristics:
+ChitChat has the following characteristics:
 
  * Push based communication over Websocket or Comet
  * Multiple rooms, can be added ad-hoc
@@ -17,3 +15,15 @@ This chat has the following characteristics:
  * Defaults to public access, own access control can be added (usual Zotonic ACL mechanism)
 
 After installing the module the chat can be found on the ``/chitchat`` url.
+
+Known issues
+------------
+
+ * Some extra messages are needed for complete MQTT-only usage, for example fetching the known rooms and the latest messages.
+ * Right now every client is connected to the *fire hose*, this will pose problems if many people are active.
+
+Future plans
+------------
+
+ * Display smileys
+ * Exchange files
