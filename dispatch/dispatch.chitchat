@@ -1,0 +1,3 @@
+[
+	{chitchat, ["chitchat"], controller_template, [{template, "page_chitchat.tpl"}]}
+].
