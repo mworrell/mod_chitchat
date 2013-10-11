@@ -24,8 +24,8 @@
 -mod_description("Chat using MQTT.").
 -mod_prio(400).
 -mod_depends([
-		mod_mqtt
-	]).
+        mod_mqtt
+    ]).
 
 %% gen_server exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -36,11 +36,11 @@
 -include("include/mod_chitchat.hrl").
 
 -record(state, {
-		context,
-		online,
-		rooms,
-		msg_ct
-	}).
+        context,
+        online,
+        rooms,
+        msg_ct
+    }).
 
 %% Keep the last 200 messages in a room
 -define(ROOM_HISTORY, 200).
@@ -70,17 +70,17 @@
 
 %% Listen to the chit-chatting
 'mqtt:chitchat/msg/+'(Message, Pid, _Context) ->
-	gen_server:cast(Pid, {msg, Message}).
+    gen_server:cast(Pid, {msg, Message}).
 
 'mqtt:chitchat/status'(Message, Pid, _Context) ->
-	gen_server:cast(Pid, {status, Message}).
+    gen_server:cast(Pid, {status, Message}).
 
 
 %% Allow everybody to publish
 observe_acl_is_allowed(#acl_is_allowed{object=#acl_mqtt{ words=[<<"site">>, _, <<"chitchat">>|_] }}, _Context) ->
-	true;
+    true;
 observe_acl_is_allowed(_AclIsAllowed, _Context) ->
-	undefined.
+    undefined.
 
 
 event(#postback_notify{message="rooms"}, Context) ->
@@ -89,57 +89,57 @@ event(#postback_notify{message="rooms"}, Context) ->
         true ->
             case rooms(Context) of
                 {ok, Rooms} ->
-                	{ok, Data} = z_ubf:encode(Rooms),
-                	z_script:add_script([
-                			<<"chitchat.fetch_rooms_cb('">>,
-	                			z_utils:js_escape(Data),
-	                		<<"');">>
-                		], Context); 
+                    {ok, Data} = z_ubf:encode(Rooms),
+                    z_script:add_script([
+                            <<"chitchat.fetch_rooms_cb('">>,
+                                z_utils:js_escape(Data),
+                            <<"');">>
+                        ], Context); 
                 {error, _} = Error ->
-                	lager:error("Error fetching rooms ~p", [Error]),
-		        	z_render:growl("Server error while fetching rooms", Context)
+                    lager:error("Error fetching rooms ~p", [Error]),
+                    z_render:growl("Server error while fetching rooms", Context)
             end;
         false ->
-        	z_render:growl("Access Denied", Context)
+            z_render:growl("Access Denied", Context)
     end;
 event(#postback_notify{message="messages"}, Context) ->
     Topic = z_mqtt:maybe_context_topic(<<"chitchat/status">>, Context),
     case z_mqtt_acl:is_allowed(publish, Topic, Context) of
         true ->
-        	Room = z_context:get_q("room", Context),
+            Room = z_context:get_q("room", Context),
             case messages(Room, Context) of
                 {ok, Ms} ->
-                	{ok, Data} = z_ubf:encode(Ms),
-                	z_script:add_script([
-                			<<"chitchat.fetch_msg_cb('">>,
-	                			z_utils:js_escape(Room),
-	                			<<"','">>,
-	                			z_utils:js_escape(Data),
-	                		<<"');">>
-                		], Context); 
+                    {ok, Data} = z_ubf:encode(Ms),
+                    z_script:add_script([
+                            <<"chitchat.fetch_msg_cb('">>,
+                                z_utils:js_escape(Room),
+                                <<"','">>,
+                                z_utils:js_escape(Data),
+                            <<"');">>
+                        ], Context); 
                 {error, _} = Error ->
-                	lager:error("Error fetching rooms ~p", [Error]),
-		        	z_render:growl("Server error while fetching rooms", Context)
+                    lager:error("Error fetching rooms ~p", [Error]),
+                    z_render:growl("Server error while fetching rooms", Context)
             end;
         false ->
-        	z_render:growl("Access Denied", Context)
+            z_render:growl("Access Denied", Context)
     end.
 
 %% @doc Return the list of rooms
 online(Context) ->
-	Name = z_utils:name_for_host(?MODULE, Context),
-	gen_server:call(Name, online).
+    Name = z_utils:name_for_host(?MODULE, Context),
+    gen_server:call(Name, online).
 
 
 %% @doc Return the list of rooms
 rooms(Context) ->
-	Name = z_utils:name_for_host(?MODULE, Context),
-	gen_server:call(Name, rooms).
+    Name = z_utils:name_for_host(?MODULE, Context),
+    gen_server:call(Name, rooms).
 
 %% @doc Return the messages in a room
 messages(Room, Context) ->
-	Name = z_utils:name_for_host(?MODULE, Context),
-	gen_server:call(Name, {msg, z_convert:to_binary(Room)}).
+    Name = z_utils:name_for_host(?MODULE, Context),
+    gen_server:call(Name, {msg, z_convert:to_binary(Room)}).
 
 
 %%====================================================================
@@ -149,7 +149,7 @@ messages(Room, Context) ->
 %% @doc Starts the server
 start_link(Args) when is_list(Args) ->
     {context, Context} = proplists:lookup(context, Args),
-	Name = z_utils:name_for_host(?MODULE, Context),
+    Name = z_utils:name_for_host(?MODULE, Context),
     gen_server:start_link({local,Name}, ?MODULE, Args, []).
 
 %%====================================================================
@@ -159,60 +159,60 @@ start_link(Args) when is_list(Args) ->
 init(Args) ->
     {context, Context} = proplists:lookup(context, Args),
     {ok, #state{
-    	context=z_context:new(Context),
-    	online=[],
-    	rooms=dict:new(),
-    	msg_ct=0
+        context=z_context:new(Context),
+        online=[],
+        rooms=dict:new(),
+        msg_ct=0
     }}.
 
 handle_call(online, _From, #state{online=Online} = State) ->
-	{reply, {ok, Online}, State};
+    {reply, {ok, Online}, State};
 
 handle_call(rooms, _From, #state{rooms=Rooms, online=Online} = State) ->
-	Rs = dict:fetch_keys(Rooms),
-	Os = lists:map(fun(#chitchat_status{room=R}) -> R end, Online),
-	{reply, {ok, lists:usort(Rs++Os)}, State};
+    Rs = dict:fetch_keys(Rooms),
+    Os = lists:map(fun(#chitchat_status{room=R}) -> R end, Online),
+    {reply, {ok, lists:usort(Rs++Os)}, State};
 
 handle_call({msg, RoomName}, _From, #state{rooms=Rooms} = State) ->
-	case dict:find(RoomName, Rooms) of
-		{ok, #room{msg=Msg}} ->
-			{reply, {ok, Msg}, State};
-		error ->
-			{reply, {ok, []}, State}
-	end;
+    case dict:find(RoomName, Rooms) of
+        {ok, #room{msg=Msg}} ->
+            {reply, {ok, Msg}, State};
+        error ->
+            {reply, {ok, []}, State}
+    end;
 
 handle_call(Message, _From, State) ->
     {stop, {unknown_call, Message}, State}.
 
 handle_cast({status, #mqtt_msg{payload=Payload}}, State) ->
-	case z_mqtt:payload_data(Payload) of
-		{ok, #chitchat_status{client_id=ClientId, status=?STATUS_OFFLINE}} ->
-			Cs = lists:keydelete(ClientId, #chitchat_status.client_id,  State#state.online),
-			{noreply, State#state{online=Cs}};
-		{ok, #chitchat_status{client_id=ClientId} = S} ->
-			Cs = lists:keydelete(ClientId, #chitchat_status.client_id,  State#state.online),
-			{noreply, State#state{online=[S|Cs]}};
-		{ok, Other} ->
-			lager:warning("Unexpected status: ~p", [Other]),
-			{noreply, State};
-		{error, _} = Error ->
-			lager:error("Status decode error: ~p on ~p", [Error, Payload]),
-			{noreply, State}
-	end;
+    case z_mqtt:payload_data(Payload) of
+        {ok, #chitchat_status{client_id=ClientId, status=?STATUS_OFFLINE}} ->
+            Cs = lists:keydelete(ClientId, #chitchat_status.client_id,  State#state.online),
+            {noreply, State#state{online=Cs}};
+        {ok, #chitchat_status{client_id=ClientId} = S} ->
+            Cs = lists:keydelete(ClientId, #chitchat_status.client_id,  State#state.online),
+            {noreply, State#state{online=[S|Cs]}};
+        {ok, Other} ->
+            lager:warning("Unexpected status: ~p", [Other]),
+            {noreply, State};
+        {error, _} = Error ->
+            lager:error("Status decode error: ~p on ~p", [Error, Payload]),
+            {noreply, State}
+    end;
 
 handle_cast({msg, #mqtt_msg{payload=Payload, topic=Topic}}, State) ->
-	case z_mqtt:payload_data(Payload) of
-		{ok, #chitchat_msg{} = Msg} ->
-			RoomName = lists:last(binary:split(Topic, <<"/">>, [global])),
-			Rooms1 = prune_rooms(do_msg(RoomName, Msg, State#state.rooms)),
-			{noreply, State#state{rooms=Rooms1}};
-		{ok, Other} ->
-			lager:warning("Unexpected message: ~p", [Other]),
-			{noreply, State};
-		{error, _} = Error ->
-			lager:error("Status decode error: ~p on ~p", [Error, Payload]),
-			{noreply, State}
-	end;
+    case z_mqtt:payload_data(Payload) of
+        {ok, #chitchat_msg{} = Msg} ->
+            RoomName = lists:last(binary:split(Topic, <<"/">>, [global])),
+            Rooms1 = prune_rooms(do_msg(RoomName, Msg, State#state.rooms)),
+            {noreply, State#state{rooms=Rooms1}};
+        {ok, Other} ->
+            lager:warning("Unexpected message: ~p", [Other]),
+            {noreply, State};
+        {error, _} = Error ->
+            lager:error("Status decode error: ~p on ~p", [Error, Payload]),
+            {noreply, State}
+    end;
 
 handle_cast(Message, State) ->
     {stop, {unknown_cast, Message}, State}.
@@ -233,33 +233,33 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 
 do_msg(RoomName, Msg, Rooms) ->
-	do_msg1(dict:find(RoomName, Rooms), RoomName, Msg, Rooms).
+    do_msg1(dict:find(RoomName, Rooms), RoomName, Msg, Rooms).
 
 do_msg1(error, RoomName, Msg, Rooms) ->
-	R = #room{
-		name=RoomName,
-		update=z_utils:now_msec(),
-		msg_ct=1,
-		msg=[Msg]
-	},
-	dict:store(RoomName, R, Rooms);
+    R = #room{
+        name=RoomName,
+        update=z_utils:now_msec(),
+        msg_ct=1,
+        msg=[Msg]
+    },
+    dict:store(RoomName, R, Rooms);
 do_msg1({ok, R}, _RoomName, Msg, Rooms) ->
-	Ct = R#room.msg_ct+1,
-	R1 = R#room{
-			update=z_utils:now_msec(),
-			msg_ct=Ct,
-			msg=prune_msg(Ct, [Msg|R#room.msg])
-		},
-	dict:store(R1#room.name, R1, Rooms).
+    Ct = R#room.msg_ct+1,
+    R1 = R#room{
+            update=z_utils:now_msec(),
+            msg_ct=Ct,
+            msg=prune_msg(Ct, [Msg|R#room.msg])
+        },
+    dict:store(R1#room.name, R1, Rooms).
 
 prune_msg(N, Ms) when N < ?ROOM_HISTORY ->
-	Ms;
+    Ms;
 prune_msg(_N, Ms) ->
-	lists:sublist(Ms, ?ROOM_HISTORY).
+    lists:sublist(Ms, ?ROOM_HISTORY).
 
 prune_rooms(Rooms) ->
-	CutOff = z_utils:now_msec() - (?ROOM_ANCIENT * 24 * 3600 * 1000),
-	dict:filter(fun(_Name, Room) ->
-					Room#room.update > CutOff
-				end, Rooms). 
+    CutOff = z_utils:now_msec() - (?ROOM_ANCIENT * 24 * 3600 * 1000),
+    dict:filter(fun(_Name, Room) ->
+                    Room#room.update > CutOff
+                end, Rooms). 
 
