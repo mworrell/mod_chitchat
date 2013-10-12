@@ -1,0 +1,60 @@
+h1 input {
+	font-size: inherit; 
+	line-height: 1.1em; 
+	height: 1.1em;
+	margin-top: 4px;
+	border-top: none;
+	border-left: none;
+	border-right: none;
+	box-shadow: none;
+}
+
+#chitchat ul {
+	margin-bottom: 32px;
+}
+
+#chat-container {
+	min-height: 200px;
+	max-height: 400px;
+	overflow-y: scroll;
+}
+
+#chat {
+	min-height: 200px;
+	border: 1px solid #eee;
+	margin-bottom: 4px;
+}
+
+.chitchat-msg {
+	padding: 4px 10px;
+	border-bottom: 1px solid #eee;
+}
+
+.chitchat-msg.me {
+	background-color: #f8f8ff;
+}
+
+.chitchat-msg .time {
+	float: right;
+	color: #999;
+	font-size: 80%;
+}
+
+#online .name {
+	display: inline-block;
+	color: black;
+}
+#online .room {
+	font-size: 80%;
+	color: #999;
+	display: inline-block;
+}
+
+#rooms .badge {
+	margin-left: 10px;
+	font-size: 80%;
+}
+
+.active .badge {
+	display: none;
+}
