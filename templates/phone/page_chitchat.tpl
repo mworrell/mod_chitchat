@@ -71,7 +71,7 @@
 
     {# Dialog: add room #}
     <form id="addRoomForm" class="form-horizontal">
-        <div class="modal hide fade" id="addRoomModal">
+        <div class="modal hide" id="addRoomModal">
             <div class="modal-header">
                 <a type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
                 <h3>{_ Add a chat room _}</h3>
