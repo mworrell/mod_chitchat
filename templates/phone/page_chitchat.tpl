@@ -5,7 +5,10 @@
 {% block title %}{_ Chit Chat _}{% endblock %}
 
 {% block html_head_extra %}
-    {% lib "css/chitchat.css" %}
+    {% lib 
+        "css/chitchat.css"
+        "css/jquery.cssemoticons.css"
+     %}
 {% endblock %}
 
 {% block content %}
@@ -145,5 +148,6 @@
              "js/qlobber.js"
              "js/pubzub.js"
              "js/chitchat.js"
+             "js/jquery.cssemoticons.min.js"
     %}
 {% endblock %}
