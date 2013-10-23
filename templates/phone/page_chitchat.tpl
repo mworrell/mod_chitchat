@@ -13,7 +13,7 @@
         {_ Chit Chat _}
         <input id="nick"
                class="input-xlarge do_autofocus" type="text" placeholder="Your name" 
-               value="{{ q.name|force_escape|default:m.acl.user.name_first }}"
+               value="{{ q.name|force_escape|default:m.acl.user.name_first|default:m.acl.user.title }}"
                tabindex="0"
         />
     </h1>
@@ -93,6 +93,8 @@
     </form>
 
     {% javascript %}
+        window.chitchat = new Chitchat();
+
         $('#msgform').submit(function(ev) {
             var msg = $('#msg').val();
             if (msg != '') {
