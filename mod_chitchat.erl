@@ -57,8 +57,8 @@
 
 %% MQTT subscriptions
 -export([
-    'mqtt:chitchat/msg/+'/3,
-    'mqtt:chitchat/status'/3,
+    'mqtt:~site/chitchat/msg/+'/3,
+    'mqtt:~site/chitchat/status'/3,
 
     event/2,
 
@@ -69,10 +69,10 @@
 ]).
 
 %% Listen to the chit-chatting
-'mqtt:chitchat/msg/+'(Message, Pid, _Context) ->
+'mqtt:~site/chitchat/msg/+'(Message, Pid, _Context) ->
     gen_server:cast(Pid, {msg, Message}).
 
-'mqtt:chitchat/status'(Message, Pid, _Context) ->
+'mqtt:~site/chitchat/status'(Message, Pid, _Context) ->
     gen_server:cast(Pid, {status, Message}).
 
 
@@ -84,8 +84,7 @@ observe_acl_is_allowed(_AclIsAllowed, _Context) ->
 
 
 event(#postback_notify{message="rooms"}, Context) ->
-    Topic = z_mqtt:maybe_context_topic(<<"chitchat/status">>, Context),
-    case z_mqtt_acl:is_allowed(publish, Topic, Context) of
+    case z_mqtt_acl:is_allowed(publish, <<"~site/chitchat/status">>, Context) of
         true ->
             case rooms(Context) of
                 {ok, Rooms} ->
@@ -103,8 +102,7 @@ event(#postback_notify{message="rooms"}, Context) ->
             z_render:growl("Access Denied", Context)
     end;
 event(#postback_notify{message="messages"}, Context) ->
-    Topic = z_mqtt:maybe_context_topic(<<"chitchat/status">>, Context),
-    case z_mqtt_acl:is_allowed(publish, Topic, Context) of
+    case z_mqtt_acl:is_allowed(publish, <<"~site/chitchat/status">>, Context) of
         true ->
             Room = z_context:get_q("room", Context),
             case messages(Room, Context) of

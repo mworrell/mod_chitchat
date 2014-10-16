@@ -25,8 +25,7 @@
 -export([process_get/2]).
 
 process_get(_ReqData, Context) ->
-    Topic = z_mqtt:maybe_context_topic(<<"chitchat/status">>, Context),
-    case z_mqtt_acl:is_allowed(publish, Topic, Context) of
+    case z_mqtt_acl:is_allowed(publish, <<"~site/chitchat/status">>, Context) of
         true ->
             case mod_chitchat:rooms(Context) of
                 {ok, Rooms} ->

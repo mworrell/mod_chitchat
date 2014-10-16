@@ -144,7 +144,7 @@
 
 {% block _js_include_extra %}
     {% lib
-             "js/ubf.js"
+             "js/modules/ubf.js"
              "js/qlobber.js"
              "js/pubzub.js"
              "js/chitchat.js"
