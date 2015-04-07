@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2013 Marc Worrell
+%% @copyright 2013-2015 Marc Worrell
 %% @doc Chat using MQTT
 
-%% Copyright 2013 Marc Worrell
+%% Copyright 2013-2015 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 -mod_title("ChitChat").
 -mod_description("Chat using MQTT.").
 -mod_prio(400).
+-mod_schema(1).
 -mod_depends([
         mod_mqtt
     ]).
@@ -45,8 +46,8 @@
 %% Keep the last 200 messages in a room
 -define(ROOM_HISTORY, 200).
 
-%% Keep inactive rooms for at most a week
--define(ROOM_ANCIENT, 7*24).
+%% Keep inactive rooms for at most a month
+-define(ROOM_ANCIENT, 30*24).
 
 
 %% MQTT topic tree:
@@ -63,9 +64,13 @@
     event/2,
 
     observe_acl_is_allowed/2,
+    observe_tick_1h/2,
+
     online/1,
     rooms/1,
-    messages/2
+    messages/2,
+
+    manage_schema/2
 ]).
 
 %% Listen to the chit-chatting
@@ -74,6 +79,11 @@
 
 'mqtt:~site/chitchat/status'(Message, Pid, _Context) ->
     gen_server:cast(Pid, {status, Message}).
+
+
+%% Prune the stored messages in the database
+observe_tick_1h(tick_1h, Context) ->
+    m_chitchat:prune(?ROOM_ANCIENT, Context).
 
 
 %% Allow everybody to publish
@@ -140,6 +150,11 @@ messages(Room, Context) ->
     gen_server:call(Name, {msg, z_convert:to_binary(Room)}).
 
 
+manage_schema(_Version, Context) ->
+    m_chitchat:install(Context),
+    ok.
+
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -156,6 +171,7 @@ start_link(Args) when is_list(Args) ->
 
 init(Args) ->
     {context, Context} = proplists:lookup(context, Args),
+    gen_server:cast(self(), init),
     {ok, #state{
         context=z_context:new(Context),
         online=[],
@@ -182,6 +198,15 @@ handle_call({msg, RoomName}, _From, #state{rooms=Rooms} = State) ->
 handle_call(Message, _From, State) ->
     {stop, {unknown_call, Message}, State}.
 
+handle_cast(init, #state{context=Context, rooms=Rooms} = State) ->
+    Msgs = m_chitchat:list_messages(Context),
+    Rooms1 = lists:foldl(fun({Room, Msg}, RoomsAcc) ->
+                            do_msg(Room, Msg, RoomsAcc, Msg#chitchat_msg.time)
+                         end,
+                         Rooms,
+                         Msgs),
+    {noreply, State#state{rooms=Rooms1}};
+
 handle_cast({status, #mqtt_msg{payload=Payload}}, State) ->
     case z_mqtt:payload_data(Payload) of
         {ok, #chitchat_status{client_id=ClientId, status=?STATUS_OFFLINE}} ->
@@ -203,6 +228,7 @@ handle_cast({msg, #mqtt_msg{payload=Payload, topic=Topic}}, State) ->
         {ok, #chitchat_msg{} = Msg} ->
             RoomName = lists:last(binary:split(Topic, <<"/">>, [global])),
             Rooms1 = prune_rooms(do_msg(RoomName, Msg, State#state.rooms)),
+            m_chitchat:insert(RoomName, Msg, State#state.context),
             {noreply, State#state{rooms=Rooms1}};
         {ok, Other} ->
             lager:warning("Unexpected message: ~p", [Other]),
@@ -231,20 +257,23 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 
 do_msg(RoomName, Msg, Rooms) ->
-    do_msg1(dict:find(RoomName, Rooms), RoomName, Msg, Rooms).
+    do_msg(RoomName, Msg, Rooms, z_datetime:timestamp()).
 
-do_msg1(error, RoomName, Msg, Rooms) ->
+do_msg(RoomName, Msg, Rooms, Timestamp) ->
+    do_msg1(dict:find(RoomName, Rooms), RoomName, Msg, Rooms, Timestamp).
+
+do_msg1(error, RoomName, Msg, Rooms, Timestamp) ->
     R = #room{
         name=RoomName,
-        update=z_utils:now_msec(),
+        update=Timestamp,
         msg_ct=1,
         msg=[Msg]
     },
     dict:store(RoomName, R, Rooms);
-do_msg1({ok, R}, _RoomName, Msg, Rooms) ->
+do_msg1({ok, R}, _RoomName, Msg, Rooms, Timestamp) ->
     Ct = R#room.msg_ct+1,
     R1 = R#room{
-            update=z_utils:now_msec(),
+            update=Timestamp,
             msg_ct=Ct,
             msg=prune_msg(Ct, [Msg|R#room.msg])
         },
@@ -256,8 +285,9 @@ prune_msg(_N, Ms) ->
     lists:sublist(Ms, ?ROOM_HISTORY).
 
 prune_rooms(Rooms) ->
-    CutOff = z_utils:now_msec() - (?ROOM_ANCIENT * 24 * 3600 * 1000),
+    CutOff = z_datetime:timestamp() - (?ROOM_ANCIENT * 3600),
     dict:filter(fun(_Name, Room) ->
                     Room#room.update > CutOff
-                end, Rooms). 
+                end, 
+                Rooms). 
 
